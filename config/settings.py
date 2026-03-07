@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'django_filters',
     'users',
     'courses',
@@ -141,3 +142,16 @@ AUTH_USER_MODEL = "users.User"
 # Настройки медиафайлов
 MEDIA_URL = '/media/'  # URL-префикс для доступа к медиафайлам
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Папка на диске для хранения файлов
+
+# Настройки JWT-токенов
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+# Настройки срока действия токенов
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}

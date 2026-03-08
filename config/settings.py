@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf.global_settings import AUTH_USER_MODEL
@@ -144,10 +145,18 @@ MEDIA_URL = '/media/'  # URL-префикс для доступа к медиа�
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Папка на диске для хранения файлов
 
 # Настройки JWT-токенов
+# Настройки REST Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # ← JWT аутентификация
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # ← По умолчанию все эндпоинты требуют авторизации
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ),
 }
 
 # Настройки срока действия токенов

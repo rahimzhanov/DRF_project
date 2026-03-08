@@ -30,4 +30,18 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_lessons_count(self, obj):
         return obj.lessons.count()
 
+    def validate(self, attrs):
+        """
+        Проверка прав на создание/изменение
+        """
+        request = self.context.get('request')
 
+        # Если это создание (POST)
+        if request and request.method == 'POST':
+            # Модераторы не могут создавать
+            if request.user.groups.filter(name='Модераторы').exists():
+                raise serializers.ValidationError(
+                    "Модераторы не могут создавать новые курсы"
+                )
+
+        return attrs

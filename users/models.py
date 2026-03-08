@@ -1,11 +1,39 @@
+from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from courses.models import Course, Lesson
 # Create your models here.
 
 
-class User(AbstractUser):
+class CustomUserManager(BaseUserManager):
+    """
+    Кастомный менеджер для модели User, который не требует username
+    """
 
+    def create_user(self, email, password=None, **extra_fields):
+        """
+        Создание обычного пользователя
+        """
+        if not email:
+            raise ValueError('Email обязателен')
+
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        """
+        Создание суперпользователя
+        """
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        return self.create_user(email, password, **extra_fields)
+
+class User(AbstractUser):
+    username = None
     email = models.EmailField(unique=True, verbose_name='Email')
     phone = models.CharField(max_length=35, verbose_name='Телефон', blank=True, null=True, help_text='Введите номер телефона')
     city = models.CharField(max_length=100, verbose_name='Город', blank=True, null=True, help_text='Введите город')
@@ -13,7 +41,9 @@ class User(AbstractUser):
 
     # Указываем, что для авторизации используется email
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']  # username все еще требуется для createsuperuser
+    REQUIRED_FIELDS = []  # Не требуем дополнительных полей
+
+    objects = CustomUserManager()
 
     class Meta:
         verbose_name = 'Пользователь'

@@ -1,8 +1,12 @@
 # users/views.py
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, generics, status
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Payment
-from .serializers import PaymentSerializer
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import Payment, User
+from .serializers import PaymentSerializer, UserRegistrationSerializer
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -29,3 +33,35 @@ class PaymentViewSet(viewsets.ModelViewSet):
     # Поля, по которым можно сортировать
     ordering_fields = ['payment_date', 'amount']
     ordering = ['-payment_date']  # сортировка по умолчанию
+
+
+class UserRegistrationView(generics.CreateAPIView):
+    """
+    Представление для регистрации новых пользователей
+    """
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [AllowAny]  # Доступно всем (даже неавторизованным)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Обработка POST запроса на регистрацию
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Создаем токены для нового пользователя
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'phone': user.phone,
+                'city': user.city,
+            },
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'message': 'Пользователь успешно зарегистрирован'
+        }, status=status.HTTP_201_CREATED)

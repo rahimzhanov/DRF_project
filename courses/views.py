@@ -10,6 +10,10 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     queryset = Course.objects.all()
 
+    def perform_create(self, serializer):
+        """Автоматически привязываем курс к текущему пользователю"""
+        serializer.save(owner=self.request.user)
+
     # Для разных действий - разные права
     def get_permissions(self):
         """
@@ -35,7 +39,10 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 class LessonCreateAPIView(generics.CreateAPIView):
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated]  # Позже добавим проверку
+    permission_classes = [IsAuthenticated, ~IsModerator]
+    def perform_create(self, serializer):
+        """Автоматически привязываем урок к текущему пользователю"""
+        serializer.save(owner=self.request.user)
 
 
 class LessonListAPIView(generics.ListAPIView):

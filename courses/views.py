@@ -66,12 +66,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 class LessonUpdateAPIView(generics.UpdateAPIView):
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
-
-    def get_permissions(self):
-        """
-        Редактирование доступно модераторам
-        """
-        return [IsAuthenticated(), IsModerator()]
+    permission_classes = [IsAuthenticated, IsModerator | IsOwner]
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
     serializer_class = LessonSerializer
@@ -79,44 +74,38 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]  # Позже добавим владельцев
 
 
+# courses/views.py - исправленный SubscriptionView
 class SubscriptionView(APIView):
-    """
-    APIView для управления подпиской на курс
-    POST /api/courses/1/subscribe/ - подписаться/отписаться
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, course_id):
-        """
-        Обработка POST запроса:
-        - Если подписка есть - удаляем
-        - Если подписки нет - создаем
-        """
-        # Получаем курс или 404
         course = get_object_or_404(Course, id=course_id)
         user = request.user
 
-        # Проверяем, есть ли уже подписка
         subscription = Subscription.objects.filter(
             user=user,
             course=course
         )
 
         if subscription.exists():
-            # Если подписка есть - удаляем
             subscription.delete()
             message = 'Подписка удалена'
+            is_subscribed = False
             status_code = status.HTTP_200_OK
         else:
-            # Если подписки нет - создаем
             Subscription.objects.create(
                 user=user,
                 course=course
             )
             message = 'Подписка добавлена'
+            is_subscribed = True
             status_code = status.HTTP_201_CREATED
 
         return Response(
-            {'message': message, 'is_subscribed': not subscription.exists()},
+            {
+                'message': message,
+                'is_subscribed': is_subscribed,
+                'course_id': course.id
+            },
             status=status_code
         )

@@ -20,9 +20,32 @@ class PaymentSerializer(serializers.ModelSerializer):
             'paid_course',
             'paid_lesson',
             'amount',
-            'payment_method',
+            'stripe_payment_url',
+            'payment_status',
         ]
+        read_only_fields = ['stripe_payment_url', 'payment_status']
 
+
+class PaymentCreateSerializer(serializers.Serializer):
+    """
+    Сериализатор для создания платежа через Stripe
+    """
+    course_id = serializers.IntegerField(required=False, allow_null=True)
+    lesson_id = serializers.IntegerField(required=False, allow_null=True)
+    success_url = serializers.URLField(required=True, help_text="URL после успешной оплаты")
+    cancel_url = serializers.URLField(required=True, help_text="URL при отмене оплаты")
+
+    def validate(self, data):
+        course_id = data.get('course_id')
+        lesson_id = data.get('lesson_id')
+
+        if not course_id and not lesson_id:
+            raise serializers.ValidationError("Нужно указать course_id или lesson_id")
+
+        if course_id and lesson_id:
+            raise serializers.ValidationError("Укажите только одно: course_id или lesson_id")
+
+        return data
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """

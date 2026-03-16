@@ -4,7 +4,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from users.apps import UsersConfig
-from users.views import PaymentViewSet, UserRegistrationView
+from users.views import (
+    PaymentViewSet,
+    UserRegistrationView,
+    PaymentCreateView,
+    PaymentStatusView
+)
 
 app_name = UsersConfig.name
 
@@ -20,4 +25,8 @@ urlpatterns = [
     # JWT токены
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Новые URL для Stripe
+    path('create-payment/', PaymentCreateView.as_view(), name='create-payment'),
+    path('payment-status/<int:payment_id>/', PaymentStatusView.as_view(), name='payment-status'),
 ]

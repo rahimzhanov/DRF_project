@@ -1,6 +1,8 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+
+from config import settings
 from courses.models import Course, Lesson
 # Create your models here.
 
@@ -56,10 +58,6 @@ class User(AbstractUser):
 
 
 class Payment(models.Model):
-    """
-    Модель для хранения информации о платежах пользователей
-    """
-    # Способы оплаты (choices)
     CASH = 'cash'
     TRANSFER = 'transfer'
     PAYMENT_METHOD_CHOICES = [
@@ -67,66 +65,81 @@ class Payment(models.Model):
         (TRANSFER, 'Перевод на счет'),
     ]
 
-    # Кто оплатил (связь с пользователем)
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='payments',
         verbose_name='Пользователь'
     )
-
-    # Дата и время оплаты
     payment_date = models.DateTimeField(
-        auto_now_add=False,  # Не auto_now_add, чтобы можно было указать любую дату
         verbose_name='Дата оплаты',
-        help_text='Укажите дату и время оплаты'
+        auto_now_add=True
     )
-
-    # Оплаченный курс (может быть пустым)
     paid_course = models.ForeignKey(
-        Course,
-        on_delete=models.SET_NULL,  # Если курс удалят, в платеже останется NULL
+        'courses.Course',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='payments',
         verbose_name='Оплаченный курс'
     )
-
-    # Оплаченный урок (может быть пустым)
     paid_lesson = models.ForeignKey(
-        Lesson,
-        on_delete=models.SET_NULL,  # Если урок удалят, в платеже останется NULL
+        'courses.Lesson',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='payments',
         verbose_name='Оплаченный урок'
     )
-
-    # Сумма оплаты
     amount = models.DecimalField(
-        max_digits=10,  # Максимальное количество цифр всего
-        decimal_places=2,  # Количество знаков после запятой (копейки)
-        verbose_name='Сумма оплаты',
-        help_text='Укажите сумму в рублях'
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Сумма оплаты'
     )
-
-    # Способ оплаты
     payment_method = models.CharField(
         max_length=10,
         choices=PAYMENT_METHOD_CHOICES,
-        default=TRANSFER,  # По умолчанию - перевод
+        default=TRANSFER,
         verbose_name='Способ оплаты'
+    )
+
+    # Новые поля для Stripe
+    stripe_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID продукта в Stripe'
+    )
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID цены в Stripe'
+    )
+    stripe_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='ID сессии в Stripe'
+    )
+    stripe_payment_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name='Ссылка на оплату'
+    )
+    payment_status = models.CharField(
+        max_length=50,
+        default='pending',
+        verbose_name='Статус платежа'
     )
 
     class Meta:
         verbose_name = 'Платеж'
         verbose_name_plural = 'Платежи'
-        ordering = ['-payment_date']  # Сортировка по дате (сначала новые)
+        ordering = ['-payment_date']
 
     def __str__(self):
-        """
-        Строковое представление платежа
-        """
         if self.paid_course:
             item = f"курс '{self.paid_course.title}'"
         elif self.paid_lesson:
@@ -135,15 +148,3 @@ class Payment(models.Model):
             item = "неизвестно"
 
         return f"{self.user.email} - {item} - {self.amount} руб."
-
-    def clean(self):
-        """
-        Валидация: должен быть оплачен либо курс, либо урок, но не оба
-        """
-        from django.core.exceptions import ValidationError
-
-        if self.paid_course and self.paid_lesson:
-            raise ValidationError('Нельзя оплатить одновременно курс и урок')
-
-        if not self.paid_course and not self.paid_lesson:
-            raise ValidationError('Должен быть указан оплаченный курс или урок')

@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+
 
 from config import settings
 
@@ -17,6 +20,22 @@ class Course(models.Model):
         null=True,  # Временно разрешаем null
         blank=True
     )
+    last_notification_sent = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Последнее уведомление'
+    )
+
+    def should_send_notification(self):
+        """
+        Проверяет, нужно ли отправлять уведомление
+        (не более одного уведомления за 4 часа)
+        """
+        if not self.last_notification_sent:
+            return True
+
+        four_hours_ago = timezone.now() - timedelta(hours=4)
+        return self.last_notification_sent < four_hours_ago
 
     def __str__(self):
         return f'{self.title}'

@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 from celery import Celery
+from celery.schedules import crontab
 
 # Добавляем корень проекта в PATH
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +27,17 @@ app = Celery('config')
 
 # Загружаем настройки из Django settings.py
 app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Настройка периодических задач (beat schedule)
+app.conf.beat_schedule = {
+    'deactivate-inactive-users': {
+        'task': 'users.tasks.deactivate_inactive_users',
+        'schedule': crontab(hour=0, minute=0),  # Каждый день в 00:00
+        'options': {
+            'expires': 3600,  # Задача устареет через 1 час
+        }
+    },
+}
 
 # Автоматически находим задачи в приложениях
 app.autodiscover_tasks()

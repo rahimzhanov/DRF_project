@@ -57,9 +57,15 @@ CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Europe/Moscow'  # Укажи свой часовой пояс
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
+# Убедись, что TIME_ZONE настроен правильно
+TIME_ZONE = 'Europe/Moscow'  # Или 'Asia/Almaty', 'Europe/Kiev' и т.д.
+USE_TZ = True
+
+# Celery timezone (должен совпадать с Django TIME_ZONE)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = False  # Используем локальное время
 
 # Application definition
 
@@ -189,3 +195,16 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+
+# Email настройки (для разработки - консоль)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@lms.com'
+
+# Для реальной отправки:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your_email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your_password'

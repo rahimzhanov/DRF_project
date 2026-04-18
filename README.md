@@ -145,3 +145,4 @@ djangorestframework==3.14.0
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 Pillow==10.2.0
+<!-- homework branch -->

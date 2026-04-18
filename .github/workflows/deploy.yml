@@ -22,13 +22,23 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install celery django-celery-beat redis psycopg2-binary
-        pip install -r requirements.txt
+        pip install celery django-celery-beat redis psycopg2-binary stripe django-cors-headers djangorestframework-simplejwt drf-yasg
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Run tests
       run: |
         echo "SECRET_KEY=django-insecure-test-key" > .env
         echo "DEBUG=True" >> .env
+        echo "DATABASE_NAME=test_db" >> .env
+        echo "DATABASE_USER=" >> .env
+        echo "DATABASE_PASSWORD=" >> .env
+        echo "DATABASE_HOST=" >> .env
+        echo "DATABASE_PORT=" >> .env
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
+        echo "REDIS_HOST=localhost" >> .env
+        echo "REDIS_PORT=6379" >> .env
+        echo "REDIS_DB=0" >> .env
+        cat .env
         python manage.py test
 
   deploy:

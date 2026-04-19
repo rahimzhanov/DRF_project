@@ -1,102 +1,147 @@
+
 # DRF_project - LMS система на Django REST Framework
 
 ## Описание проекта
+
 LMS (Learning Management System) - система для управления курсами и уроками. Проект представляет собой REST API для создания и управления образовательным контентом.
 
 ## Функциональность
 
-### 1. Управление курсами
-- Создание курса
-- Просмотр списка всех курсов
-- Просмотр детальной информации о курсе
-- Редактирование курса
-- Удаление курса
-
-### 2. Управление уроками
-- Создание урока с привязкой к курсу
-- Просмотр списка всех уроков
-- Просмотр детальной информации об уроке
-- Редактирование урока
-- Удаление урока
+- Регистрация и авторизация пользователей (JWT)
+- Создание, редактирование и удаление курсов
+- Создание, редактирование и удаление уроков
+- Привязка уроков к курсам
+- Пагинация списков
+- Документация API (Swagger/ReDoc)
+- Асинхронные задачи (Celery + Redis)
+- Отправка уведомлений в Telegram
+- Тесты (покрытие 80%)
+- CI/CD (GitHub Actions)
 
 ## Технологии
+
 - Python 3.13
 - Django 6.0.2
-- Django REST Framework 3.14.0
+- Django REST Framework 3.16.1
+- JWT аутентификация
 - PostgreSQL
-- Pillow (для работы с изображениями)
+- Redis (брокер сообщений)
+- Celery (отложенные задачи)
+- Celery Beat (периодические задачи)
+- Telegram Bot API
+- Gunicorn (WSGI сервер)
+- Nginx (веб-сервер)
+- GitHub Actions (CI/CD)
 
-## Установка и запуск
+## Установка и запуск (локально)
 
 ### 1. Клонирование репозитория
-git clone <ссылка на репозиторий>
+git clone https://github.com/rahimzhanov/DRF_project.git
 cd DRF_project
 
-### 2. Создание и активация виртуального окружения
+### 2. Создание виртуального окружения
+````
 python -m venv venv
 venv\Scripts\activate  # для Windows
 source venv/bin/activate  # для Mac/Linux
-
+````
 ### 3. Установка зависимостей
 pip install -r requirements.txt
 
-### 4. Настройка базы данных PostgreSQL
-Создай базу данных в PostgreSQL:
-CREATE DATABASE drf_db;
-
-В файле .env в корне проекта пропиши:
+### 4. Настройка переменных окружения
+````
+Создайте файл .env в корне проекта:
+SECRET_KEY=your-secret-key-here
+DEBUG=True
 DATABASE_NAME=drf_db
 DATABASE_USER=postgres
-DATABASE_PASSWORD=твой_пароль
+DATABASE_PASSWORD=your_password
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-SECRET_KEY=твой_секретный_ключ
-DEBUG=True
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+````
+### 5. Создание базы данных
+В PostgreSQL:
+CREATE DATABASE drf_db;
 
-### 5. Применение миграций
-python manage.py makemigrations
+### 6. Применение миграций
 python manage.py migrate
 
-### 6. Создание суперпользователя
+### 7. Создание суперпользователя
 python manage.py createsuperuser
 
-### 7. Запуск сервера
+### 8. Запуск Redis
+redis-server
+
+### 9. Запуск Celery Worker
+celery -A config worker --loglevel=info --pool=solo
+
+### 10. Запуск Celery Beat
+celery -A config beat --loglevel=info
+
+### 11. Запуск Django сервера
 python manage.py runserver
 
-## API Endpoints
+## API Эндпоинты
 
+### Пользователи
+````
+POST /api/users/register/ - регистрация
+POST /api/users/token/ - получение JWT токена
+POST /api/users/token/refresh/ - обновление токена
+````
 ### Курсы
+````
 GET /api/courses/ - список всех курсов
-POST /api/courses/ - создать новый курс
-GET /api/courses/{id}/ - получить курс по ID
-PUT /api/courses/{id}/ - полностью обновить курс
-PATCH /api/courses/{id}/ - частично обновить курс
-DELETE /api/courses/{id}/ - удалить курс
-
+POST /api/courses/ - создание курса
+GET /api/courses/{id}/ - детали курса
+PUT /api/courses/{id}/ - обновление курса
+PATCH /api/courses/{id}/ - частичное обновление
+DELETE /api/courses/{id}/ - удаление курса
+````
 ### Уроки
+````
 GET /api/lessons/ - список всех уроков
-POST /api/lessons/create/ - создать новый урок
-GET /api/lessons/{id}/ - получить урок по ID
-PUT /api/lessons/{id}/update/ - обновить урок
-DELETE /api/lessons/{id}/delete/ - удалить урок
+POST /api/lessons/create/ - создание урока
+GET /api/lessons/{id}/ - детали урока
+PUT /api/lessons/{id}/update/ - обновление урока
+DELETE /api/lessons/{id}/delete/ - удаление урока
+````
+## Документация API
+````
+Swagger UI: http://127.0.0.1:8000/swagger/
+ReDoc: http://127.0.0.1:8000/redoc/
+````
+## Развертывание на сервере
 
-## Примеры запросов
+### Настройка сервера (Yandex Cloud / Ubuntu)
+````
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3-pip python3-venv nginx postgresql redis-server -y
+````
+### Клонирование проекта
+````
+sudo mkdir -p /var/www/drf_project
+sudo git clone https://github.com/rahimzhanov/DRF_project.git /var/www/drf_project
+````
+### Настройка Gunicorn
+Создайте файл /etc/systemd/system/gunicorn.service
 
-### Создание курса
-POST /api/courses/
-{
-    "title": "Python для начинающих",
-    "description": "Полный курс по Python"
-}
+### Настройка Nginx
+Создайте файл /etc/nginx/sites-available/drf_project
 
-### Создание урока
-POST /api/lessons/create/
-{
-    "title": "Введение в Python",
-    "description": "Первый урок курса",
-    "video_link": "https://youtube.com/watch?v=12345",
-    "course": 1
-}
+## CI/CD (GitHub Actions)
+
+Проект настроен на автоматическое тестирование и деплой при каждом push в ветку main.
+
+Workflow файл: .github/workflows/deploy.yml
+
+Этапы:
+1. Установка зависимостей
+2. Запуск тестов
+3. Деплой на сервер (при успешных тестах)
 
 ## Структура проекта
 ````
@@ -118,31 +163,11 @@ DRF_project/
 ├── media/
 ├── manage.py
 ├── requirements.txt
-└── .env
+├── .env
+└── .github/workflows/      # CI/CD конфигурация
 ````
+## Автор
+Аман Рахимжанов
 
-## Модели данных
-
-### Course (Курс)
-- title - название курса
-- description - описание курса
-- preview - изображение (опционально)
-- created_at - дата создания
-- updated_at - дата обновления
-
-### Lesson (Урок)
-- title - название урока
-- description - описание урока
-- preview - изображение (опционально)
-- video_link - ссылка на видео
-- course - курс (внешний ключ)
-- created_at - дата создания
-- updated_at - дата обновления
-
-## Зависимости (requirements.txt)
-Django==6.0.2
-djangorestframework==3.14.0
-psycopg2-binary==2.9.9
-python-dotenv==1.0.0
-Pillow==10.2.0
-<!-- homework branch -->
+## Лицензия
+MIT
